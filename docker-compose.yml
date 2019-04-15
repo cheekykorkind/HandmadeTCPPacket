@@ -1,0 +1,11 @@
+version: '3'
+services:
+  python3:
+    restart: always
+    build: .
+    container_name: 'handmade_tcp_packet'
+    working_dir: '/root/opt/'
+    tty: true
+    privileged: true
+    volumes:
+      - ./opt:/root/opt
