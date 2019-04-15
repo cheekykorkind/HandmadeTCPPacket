@@ -1,4 +1,5 @@
 import socket, sys
+import yara
 from struct import *
  
 # checksum functions needed for calculation checksum
@@ -18,11 +19,8 @@ def checksum(msg):
     return s
  
 #create a raw socket
-# try:
+
 s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-# except socket.error, msg:
-#     print 'Socket could not be created. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-#     sys.exit()
  
 # tell kernel not to put in headers, since we are providing it
 s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
@@ -30,9 +28,9 @@ s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 # now start constructing the packet
 packet = ''
  
-# source_ip = '172.19.0.2'
-source_ip = '192.168.33.15'
-dest_ip = '192.168.33.20' # or socket.gethostbyname('www.google.com')
+source_ip = socket.gethostbyname(socket.gethostname())
+dest_ip = '192.168.33.15' # or socket.gethostbyname('www.google.com')
+
  
 # ip header fields
 ihl = 5
@@ -53,8 +51,8 @@ ihl_version = (version << 4) + ihl
 ip_header = pack('!BBHHHBBH4s4s' , ihl_version, tos, tot_len, id, frag_off, ttl, protocol, check, saddr, daddr)
  
 # tcp header fields
-source = 1234   # source port
-dest = 80   # destination port
+source = 8888   # source port
+dest = 9999   # destination port
 seq = 0
 ack_seq = 0
 doff = 5    #4 bit field, size of tcp header, 5 * 4 = 20 bytes
@@ -92,6 +90,26 @@ tcp_header = pack('!HHLLBBHHH' , source, dest, seq, ack_seq, offset_res, tcp_fla
  
 # final full packet - syn packets dont have any data
 packet = ip_header + tcp_header
- 
+
+
+rules = yara.compile(filepath='tcpRule.yar')
+print(rules.match(data=tcp_header))
+
 #Send the packet finally - the port specified has no effect
 s.sendto(packet, (dest_ip , 0 ))    # put this in a loop if you want to flood the target
+
+
+# import socket, sys
+# import yara
+# from TCP import TCP
+
+# if __name__ == "__main__":
+#     s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+#     tcp = TCP(8888,9999)
+#     #Send the packet finally - the port specified has no effect
+#     s.sendto(tcp.packet, ('192.168.33.15' , 0 ))    # put this in a loop if you want to flood the target
+
+
+
+# for p1 in packet: 
+#     print(hex(p1))
